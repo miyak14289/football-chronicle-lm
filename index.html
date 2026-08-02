@@ -84,6 +84,23 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:100;align-items:flex-end;justify-content:center;padding:12px}
 .modal.open{display:flex}.modal-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:#18201c;border:1px solid var(--line);border-radius:20px;padding:18px}
 .hidden{display:none!important}
+
+.season-table th:nth-child(1),.season-table td:nth-child(1){
+ position:sticky;left:0;z-index:4;background:#111714;min-width:168px;max-width:168px;
+ overflow:hidden;text-overflow:ellipsis;
+}
+.season-table th:nth-child(2),.season-table td:nth-child(2){
+ position:sticky;left:168px;z-index:4;background:#111714;min-width:58px;max-width:58px;
+ box-shadow:8px 0 12px rgba(0,0,0,.28);
+}
+.season-table thead th:nth-child(1),.season-table thead th:nth-child(2){background:#202824;z-index:7}
+.scroll-hint{font-size:12px;color:var(--muted);margin:8px 0 0;text-align:right}
+.ranking-table{min-width:0;table-layout:fixed}
+.ranking-table th:nth-child(1),.ranking-table td:nth-child(1){width:54px;text-align:center}
+.ranking-table th:nth-child(2),.ranking-table td:nth-child(2){width:58%;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.ranking-table th:last-child,.ranking-table td:last-child{width:32%;text-align:right}
+.info-btn{flex:0 0 auto!important;width:44px;height:44px;padding:0;border-radius:50%;font-size:20px}
+
 @media(max-width:760px){.grid,.grid3{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.tab{font-size:10px;padding:10px 2px}.card{padding:14px}.slot{width:90px}}
 </style>
 </head>
@@ -139,7 +156,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <form id="statsForm">
 <div class="grid3">
 <div><label>選手名</label><input id="playerName" readonly></div>
-<div><label>ポジション</label><select id="position" required><option value="">選択</option><option>GK</option><option>DF</option><option>MF</option><option>FW</option></select></div>
+<div><label>ポジション</label><select id="position" required><option value="">選択</option><option>GK</option><option>DF</option><option>MF</option><option>FW</option></select></div><div><label>年齢</label><input id="age" type="number" min="10" max="60" step="1" required placeholder="例：24"></div>
 <div><label>レンタル</label><div class="check"><input id="loan" type="checkbox"><label for="loan">レンタルで別チームにいた選手</label></div></div>
 <div><label>出場数</label><input id="apps" type="number" min="0" step="1" required></div>
 <div><label>得点</label><input id="goals" type="number" min="0" step="1" required></div>
@@ -160,13 +177,13 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 </div>
 <p class="note">効率系ランキングと効率系タイトルは10試合以上出場した選手だけが対象です。</p>
 <div id="seasonSummary" class="stats"></div>
-<div class="table-wrap" style="margin-top:12px"><table><thead id="seasonTableHead"></thead><tbody id="seasonTableBody"></tbody></table></div>
+<p class="scroll-hint">選手名・Posを固定して、成績列を横にスクロールできます →</p><div class="table-wrap" style="margin-top:8px"><table class="season-table"><thead id="seasonTableHead"></thead><tbody id="seasonTableBody"></tbody></table></div>
 </div>
 </section>
 
 <section id="playersPanel" class="panel">
 <div class="card"><h2>選手キャリア</h2><select id="careerPlayerSelect"></select><div id="careerSummary" class="stats" style="margin-top:12px"></div></div>
-<div class="card"><div class="table-wrap"><table><thead><tr><th>シーズン</th><th>選手</th><th>Pos</th><th>出場</th><th>得点</th><th>A</th><th>関与</th><th>CS</th><th>評点</th><th>タイトル</th></tr></thead><tbody id="careerBody"></tbody></table></div></div>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>シーズン</th><th>選手</th><th>Pos</th><th>年齢</th><th>出場</th><th>得点</th><th>A</th><th>関与</th><th>CS</th><th>評点</th><th>タイトル</th></tr></thead><tbody id="careerBody"></tbody></table></div></div>
 <div class="card"><h2>自己ベスト</h2><div id="personalBest" class="stats"></div></div>
 </section>
 
@@ -175,11 +192,11 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <div class="toolbar">
 <select id="rankingScope"><option value="season">シーズン内</option><option value="career">歴代通算</option><option value="single">単一シーズン記録</option></select>
 <select id="rankingSeason"></select>
-<select id="rankingMetric"></select>
+<select id="rankingMetric"></select><button class="btn ghost info-btn" id="rankingInfoBtn" aria-label="アイコンの意味">ⓘ</button>
 </div>
 <p class="note">1試合あたりの項目は10試合以上出場した選手のみ対象です。</p>
 </div>
-<div class="card"><div class="table-wrap"><table><thead><tr><th>順位</th><th>選手</th><th>シーズン</th><th>記録</th></tr></thead><tbody id="rankingBody"></tbody></table></div></div>
+<div class="card"><div class="table-wrap"><table class="ranking-table"><thead id="rankingHead"></thead><tbody id="rankingBody"></tbody></table></div></div>
 </section>
 
 <section id="best11Panel" class="panel">
@@ -195,16 +212,33 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <div class="card"><h2>バックアップ</h2><div id="backupStatus" class="banner warn"></div>
 <div class="actions"><button class="btn primary" id="exportBackupBtn">全データを保存</button><label class="filebtn secondary">バックアップから復元<input id="importBackupInput" type="file" accept=".json,application/json" hidden></label></div>
 <p class="note">保存ファイルには、その時点までの全シーズン・全選手・全成績・ベストイレブン保存結果が入ります。</p></div>
-<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.0.0</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
+<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.1.0</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
 </section>
 </main>
+
+
+<div id="rankingInfoModal" class="modal"><div class="modal-box">
+<h2>アイコンの意味</h2>
+<div class="banner ok">
+🏃 出場数<br>
+⚽️ 得点<br>
+🎯 アシスト<br>
+🔥 得点関与<br>
+🧤 クリーンシート<br>
+⭐️ 平均評点<br>
+📈 1試合あたり得点<br>
+🪄 1試合あたりアシスト<br>
+💥 1試合あたり得点関与
+</div>
+<div class="actions"><button class="btn primary" id="closeRankingInfoBtn">閉じる</button></div>
+</div></div>
 
 <div id="restoreModal" class="modal"><div class="modal-box"><h2>バックアップを復元</h2><div id="restoreSummary" class="banner warn"></div><div class="actions"><button class="btn danger" id="confirmRestoreBtn">現在のデータを置き換えて復元</button><button class="btn ghost" id="cancelRestoreBtn">キャンセル</button></div></div></div>
 
 <script>
 const STORAGE_KEY="footballChronicleOfficial_v2";
 const $=id=>document.getElementById(id);
-let db=loadDB(), selectedPhotos=[], entryIndex=0, pendingRestore=null, sortState={key:"apps",dir:"desc"};
+let db=loadDB(), selectedPhotos=[], entryIndex=0, pendingRestore=null, lastPosition="", sortState={key:"roster",dir:"asc"};
 
 const metrics={
  apps:{icon:"🏃",label:"出場数",eff:false},
@@ -217,9 +251,9 @@ const metrics={
  apg:{icon:"🪄",label:"アシスト／試合",eff:true},
  ipg:{icon:"💥",label:"得点関与／試合",eff:true}
 };
-function defaultDB(){return{version:"2.0.0",seasons:[],best11:{},lastBackup:null}}
+function defaultDB(){return{version:"2.1.0",seasons:[],best11:{},lastBackup:null}}
 function loadDB(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return x&&Array.isArray(x.seasons)?x:defaultDB()}catch{return defaultDB()}}
-function saveDB(){db.version="2.0.0";localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll()}
+function saveDB(){db.version="2.1.0";localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll()}
 function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"_"+Math.random()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function getSeason(id){return db.seasons.find(s=>s.id===id)}
@@ -256,7 +290,7 @@ $("createSeasonBtn").onclick=()=>{
  const name=$("newSeasonName").value.trim();if(!name)return alert("シーズン名を入力してください。");
  if(db.seasons.some(s=>s.name===name))return alert("同じシーズン名があります。");
  let roster=[];
- if($("createMode").value==="copy"){const src=getSeason($("copySource").value);if(!src)return alert("コピー元を選択してください。");roster=src.roster.map(p=>({name:p.name,position:p.position||""}))}
+ if($("createMode").value==="copy"){const src=getSeason($("copySource").value);if(!src)return alert("コピー元を選択してください。");roster=src.roster.map(p=>({name:p.name,position:p.position||"",age:Number.isFinite(+p.age)?(+p.age+1):""}))}
  const s={id:uid(),name,locked:false,roster,records:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),reopenedAt:null};
  db.seasons.push(s);saveDB();$("newSeasonName").value="";$("workSeason").value=s.id;$("rosterArea").classList.remove("hidden");loadRosterEditor();
 };
@@ -304,7 +338,7 @@ function rosterNames(){return[...new Set($("rosterTextarea").value.split(/\n/).m
 function saveRoster(start){
  const s=currentSeason();if(!s)return alert("シーズンを選択してください。");if(s.locked)return alert("確定済みです。");
  const names=rosterNames();if(!names.length)return alert("選手名を入力してください。");
- const old=new Map(s.roster.map(x=>[x.name,x]));s.roster=names.map(n=>old.get(n)||{name:n,position:""});
+ const old=new Map(s.roster.map(x=>[x.name,x]));s.roster=names.map(n=>old.get(n)||{name:n,position:"",age:""});
  s.records=s.records.filter(r=>names.includes(r.name));s.updatedAt=new Date().toISOString();saveDB();
  if(start){$("rosterArea").classList.add("hidden");openEntry()}else alert(`${names.length}人の名簿を保存しました。`);
 }
@@ -320,20 +354,21 @@ function showEntry(){
  const p=s.roster[entryIndex],r=s.records.find(x=>x.name===p.name);
  $("entryCount").textContent=`${entryIndex+1}/${s.roster.length}人`;$("entryPlayerName").textContent=p.name;$("entryState").textContent=r?"入力済み":"未入力";
  $("entryProgress").style.width=(s.roster.length?Math.round(s.records.length/s.roster.length*100):0)+"%";
- $("playerName").value=p.name;$("position").value=r?.position||p.position||"";$("loan").checked=!!r?.loan;
+ $("playerName").value=p.name;$("position").value=r?.position||p.position||lastPosition||"";$("age").value=r?.age??p.age??"";$("loan").checked=!!r?.loan;
  $("apps").value=r?.apps??"";$("goals").value=r?.goals??"";$("assists").value=r?.assists??"";$("cleanSheets").value=r?.cleanSheets??"";$("rating").value=r?.rating??"";
  $("entryRoster").innerHTML=s.roster.map((x,i)=>{const done=s.records.some(r=>r.name===x.name);return `<button type="button" class="btn ${done?"secondary":"ghost"}" style="padding:7px 9px;margin:3px;font-size:12px" onclick="jumpEntry(${i})">${done?"✅":"⬜"} ${esc(x.name)}</button>`}).join("");
 }
 window.jumpEntry=i=>{entryIndex=i;showEntry()};$("prevPlayerBtn").onclick=()=>{entryIndex--;showEntry()};$("nextPlayerBtn").onclick=()=>{entryIndex++;showEntry()};
 $("statsForm").onsubmit=e=>{
  e.preventDefault();const s=currentSeason();if(!s||s.locked)return;
- const r={name:$("playerName").value,position:$("position").value,loan:$("loan").checked,apps:+$("apps").value,goals:+$("goals").value,assists:+$("assists").value,cleanSheets:+$("cleanSheets").value,rating:+$("rating").value};
+ const r={name:$("playerName").value,position:$("position").value,age:+$("age").value,loan:$("loan").checked,apps:+$("apps").value,goals:+$("goals").value,assists:+$("assists").value,cleanSheets:+$("cleanSheets").value,rating:+$("rating").value};
  if(!r.position)return alert("ポジションを選択してください。");
+ if(!Number.isInteger(r.age)||r.age<10||r.age>60)return alert("年齢は10〜60の整数で入力してください。");
  if([r.apps,r.goals,r.assists,r.cleanSheets].some(x=>!Number.isInteger(x)||x<0))return alert("出場・得点・アシスト・CSは0以上の整数で入力してください。");
  if(r.cleanSheets>r.apps)return alert("クリーンシート数は出場数以下にしてください。");
  if(r.rating<0||r.rating>10)return alert("平均評点は0〜10で入力してください。");
  const i=s.records.findIndex(x=>x.name===r.name);if(i>=0)s.records[i]=r;else s.records.push(r);
- const rp=s.roster.find(x=>x.name===r.name);if(rp)rp.position=r.position;
+ const rp=s.roster.find(x=>x.name===r.name);if(rp){rp.position=r.position;rp.age=r.age}lastPosition=r.position;
  s.updatedAt=new Date().toISOString();saveDB();entryIndex=Math.min(entryIndex+1,s.roster.length-1);showEntry();
 };
 
@@ -341,21 +376,26 @@ function openSeasonView(){const s=currentSeason();if(!s)return alert("シーズ�
 function renderSeasonView(){
  const s=currentSeason();if(!s)return;const mode=$("viewMode").value,q=$("playerSearch").value.toLowerCase();
  let rows=s.records.filter(r=>r.name.toLowerCase().includes(q));
- rows.sort((a,b)=>{let av=sortState.key==="name"?a.name:valueOf(a,sortState.key),bv=sortState.key==="name"?b.name:valueOf(b,sortState.key);if(av==null)av=-Infinity;if(bv==null)bv=-Infinity;const c=typeof av==="string"?av.localeCompare(bv,"ja"):av-bv;return sortState.dir==="asc"?c:-c});
- const cols=mode==="basic"?[["name","選手"],["position","Pos"],["apps","出場"],["goals","得点"],["assists","A"],["cleanSheets","CS"],["rating","評点"],["titles","タイトル"]]:
+ rows.sort((a,b)=>{
+  if(sortState.key==="roster")return s.roster.findIndex(x=>x.name===a.name)-s.roster.findIndex(x=>x.name===b.name);
+  if(sortState.key==="position"){const order={GK:0,DF:1,MF:2,FW:3};return (order[a.position]??9)-(order[b.position]??9)||s.roster.findIndex(x=>x.name===a.name)-s.roster.findIndex(x=>x.name===b.name)}
+  let av=sortState.key==="name"?a.name:valueOf(a,sortState.key),bv=sortState.key==="name"?b.name:valueOf(b,sortState.key);
+  if(av==null)av=-Infinity;if(bv==null)bv=-Infinity;const c=typeof av==="string"?av.localeCompare(bv,"ja"):av-bv;return sortState.dir==="asc"?c:-c
+ });
+ const cols=mode==="basic"?[["name","選手"],["position","Pos"],["age","年齢"],["apps","出場"],["goals","得点"],["assists","A"],["cleanSheets","CS"],["rating","評点"],["titles","タイトル"]]:
  mode==="attack"?[["name","選手"],["position","Pos"],["goals","得点"],["assists","A"],["involvement","関与"],["titles","タイトル"]]:
  [["name","選手"],["position","Pos"],["gpg","得点/試合"],["apg","A/試合"],["ipg","関与/試合"],["titles","タイトル"]];
  $("seasonTableHead").innerHTML="<tr>"+cols.map(c=>`<th onclick="setSort('${c[0]}')">${c[1]} ${sortState.key===c[0]?(sortState.dir==="asc"?"▲":"▼"):""}</th>`).join("")+"</tr>";
  $("seasonTableBody").innerHTML=rows.length?rows.map(r=>"<tr>"+cols.map(([k])=>{
-  if(k==="name")return `<td>${esc(displayName(r))}</td>`;if(k==="position")return `<td><span class="pill">${r.position}</span></td>`;
+  if(k==="name")return `<td title="${esc(displayName(r))}">✅ ${esc(displayName(r))}</td>`;if(k==="position")return `<td><span class="pill">${r.position}</span></td>`;
   if(k==="titles")return `<td class="medals">${titlesFor(s,r).slice(0,3).map(t=>`<span class="title-chip" title="${metrics[t.k].label} ${t.rank}位">${t.label}</span>`).join("")||"－"}</td>`;
-  const v=valueOf(r,k);return `<td>${v==null?"－":(["rating","gpg","apg","ipg"].includes(k)?v.toFixed(2):v)}</td>`;
+  const v=valueOf(r,k);return `<td>${v==null||v===""?"－":(["rating","gpg","apg","ipg"].includes(k)?Number(v).toFixed(2):v)}</td>`;
  }).join("")+"</tr>").join(""):'<tr><td colspan="9" class="empty">入力済み成績がありません</td></tr>';
  const sum=k=>s.records.reduce((a,r)=>a+(valueOf(r,k)||0),0),avg=s.records.reduce((a,r)=>a+r.rating*r.apps,0)/(sum("apps")||1);
  $("seasonSummary").innerHTML=`<div class="stat"><small>入力</small><b>${s.records.length}/${s.roster.length}</b></div><div class="stat"><small>総得点</small><b>${sum("goals")}</b></div><div class="stat"><small>総アシスト</small><b>${sum("assists")}</b></div><div class="stat"><small>加重平均評点</small><b>${avg.toFixed(2)}</b></div>`;
 }
-window.setSort=k=>{if(k==="titles"||k==="position")return;if(sortState.key===k)sortState.dir=sortState.dir==="asc"?"desc":"asc";else sortState={key:k,dir:k==="name"?"asc":"desc"};renderSeasonView()};
-$("viewMode").onchange=renderSeasonView;$("playerSearch").oninput=renderSeasonView;$("sortSelect").onchange=e=>{sortState={key:e.target.value,dir:e.target.value==="name"?"asc":"desc"};renderSeasonView()};
+window.setSort=k=>{if(k==="titles")return;if(sortState.key===k)sortState.dir=sortState.dir==="asc"?"desc":"asc";else sortState={key:k,dir:["name","roster","position"].includes(k)?"asc":"desc"};renderSeasonView()};
+$("viewMode").onchange=renderSeasonView;$("playerSearch").oninput=renderSeasonView;$("sortSelect").onchange=e=>{sortState={key:e.target.value,dir:["name","roster","position"].includes(e.target.value)?"asc":"desc"};renderSeasonView()};
 
 function renderPlayers(){
  const names=[...new Set(db.seasons.flatMap(s=>s.records.map(r=>r.name)))].sort((a,b)=>a.localeCompare(b,"ja"));let selected=$("careerPlayerSelect").value;if(!names.includes(selected))selected=names[0]||"";
@@ -363,7 +403,7 @@ function renderPlayers(){
  const rows=db.seasons.flatMap(s=>s.records.filter(r=>r.name===selected).map(r=>({...r,season:s})));
  const t={apps:0,goals:0,assists:0,cleanSheets:0,rw:0};rows.forEach(r=>{t.apps+=r.apps;t.goals+=r.goals;t.assists+=r.assists;t.cleanSheets+=r.cleanSheets;t.rw+=r.rating*r.apps});
  $("careerSummary").innerHTML=`<div class="stat"><small>通算出場</small><b>${t.apps}</b></div><div class="stat"><small>通算得点</small><b>${t.goals}</b></div><div class="stat"><small>通算アシスト</small><b>${t.assists}</b></div><div class="stat"><small>通算平均評点</small><b>${t.apps?(t.rw/t.apps).toFixed(2):"－"}</b></div>`;
- $("careerBody").innerHTML=rows.length?rows.map(r=>`<tr><td>${esc(r.season.name)}</td><td>${esc(displayName(r))}</td><td>${r.position}</td><td>${r.apps}</td><td>${r.goals}</td><td>${r.assists}</td><td>${r.goals+r.assists}</td><td>${r.cleanSheets}</td><td>${r.rating.toFixed(2)}</td><td class="medals">${titlesFor(r.season,r).map(t=>`<span class="title-chip">${t.label}</span>`).join("")||"－"}</td></tr>`).join(""):'<tr><td colspan="10" class="empty">選手データがありません</td></tr>';
+ $("careerBody").innerHTML=rows.length?rows.map(r=>`<tr><td>${esc(r.season.name)}</td><td>${esc(displayName(r))}</td><td>${r.position}</td><td>${r.age??"－"}</td><td>${r.apps}</td><td>${r.goals}</td><td>${r.assists}</td><td>${r.goals+r.assists}</td><td>${r.cleanSheets}</td><td>${r.rating.toFixed(2)}</td><td class="medals">${titlesFor(r.season,r).map(t=>`<span class="title-chip">${t.label}</span>`).join("")||"－"}</td></tr>`).join(""):'<tr><td colspan="11" class="empty">選手データがありません</td></tr>';
  const max=k=>rows.length?rows.reduce((a,b)=>valueOf(a,k)>=valueOf(b,k)?a:b):null,g=max("goals"),a=max("assists"),rt=max("rating"),iv=max("involvement");
  $("personalBest").innerHTML=`<div class="stat"><small>最多得点</small><b>${g?g.goals:"－"}</b><small>${g?esc(g.season.name):""}</small></div><div class="stat"><small>最多アシスト</small><b>${a?a.assists:"－"}</b><small>${a?esc(a.season.name):""}</small></div><div class="stat"><small>最高評点</small><b>${rt?rt.rating.toFixed(2):"－"}</b><small>${rt?esc(rt.season.name):""}</small></div><div class="stat"><small>最多得点関与</small><b>${iv?iv.goals+iv.assists:"－"}</b><small>${iv?esc(iv.season.name):""}</small></div>`;
 }
@@ -375,13 +415,29 @@ function careerAggregate(){
 }
 function renderRanking(){
  const scope=$("rankingScope").value,k=$("rankingMetric").value;let rows=[];
- if(scope==="season"){const s=getSeason($("rankingSeason").value);if(s)rows=ranked(s,k).map(r=>({name:displayName(r),season:s.name,value:valueOf(r,k)}))}
- else if(scope==="career"){rows=careerAggregate().filter(()=>!metrics[k].eff).sort((a,b)=>(b[k]??-Infinity)-(a[k]??-Infinity)).map(r=>({name:r.name,season:"通算",value:r[k]}))}
- else rows=db.seasons.flatMap(s=>s.records.filter(r=>eligible(r,k)).map(r=>({name:displayName(r),season:s.name,value:valueOf(r,k)}))).sort((a,b)=>(b.value??-Infinity)-(a.value??-Infinity));
- let prev,rank=0;$("rankingBody").innerHTML=rows.length?rows.map((r,i)=>{if(i===0||r.value!==prev)rank=i+1;prev=r.value;return `<tr><td class="rank">${rank<=3?medal(rank):rank}</td><td>${esc(r.name)}</td><td>${esc(r.season)}</td><td>${["rating","gpg","apg","ipg"].includes(k)?Number(r.value).toFixed(2):r.value}</td></tr>`}).join(""):'<tr><td colspan="4" class="empty">対象データがありません</td></tr>';
+ if(scope==="season"){
+  const s=getSeason($("rankingSeason").value);
+  if(s)rows=ranked(s,k).map(r=>({name:displayName(r),season:s.name,value:valueOf(r,k)}));
+ }else if(scope==="career"){
+  rows=careerAggregate().filter(()=>!metrics[k].eff).sort((a,b)=>(b[k]??-Infinity)-(a[k]??-Infinity)).map(r=>({name:r.name,season:"通算",value:r[k]}));
+ }else{
+  rows=db.seasons.flatMap(s=>s.records.filter(r=>eligible(r,k)).map(r=>({name:displayName(r),season:s.name,value:valueOf(r,k)}))).sort((a,b)=>(b.value??-Infinity)-(a.value??-Infinity));
+ }
+ const showSeason=scope==="single";
+ $("rankingHead").innerHTML=showSeason?"<tr><th>順位</th><th>選手</th><th>シーズン</th><th>記録</th></tr>":"<tr><th>順位</th><th>選手</th><th>記録</th></tr>";
+ let prev,rank=0;
+ $("rankingBody").innerHTML=rows.length?rows.map((r,i)=>{
+  if(i===0||r.value!==prev)rank=i+1;prev=r.value;
+  const value=["rating","gpg","apg","ipg"].includes(k)?Number(r.value).toFixed(2):r.value;
+  return showSeason
+   ?`<tr><td class="rank">${rank<=3?medal(rank):rank}</td><td title="${esc(r.name)}">${esc(r.name)}</td><td>${esc(r.season)}</td><td>${value}</td></tr>`
+   :`<tr><td class="rank">${rank<=3?medal(rank):rank}</td><td title="${esc(r.name)}">${esc(r.name)}</td><td>${value}</td></tr>`;
+ }).join(""):`<tr><td colspan="${showSeason?4:3}" class="empty">対象データがありません</td></tr>`;
  $("rankingSeason").classList.toggle("hidden",scope!=="season");
 }
 $("rankingScope").onchange=renderRanking;$("rankingSeason").onchange=renderRanking;$("rankingMetric").onchange=renderRanking;
+$("rankingInfoBtn").onclick=()=>$("rankingInfoModal").classList.add("open");
+$("closeRankingInfoBtn").onclick=()=>$("rankingInfoModal").classList.remove("open");
 
 const formations={
  "433":[["GK","GK",50,90],["LB","DF",16,72],["CB","DF",39,76],["CB","DF",61,76],["RB","DF",84,72],["CM","MF",25,49],["CM","MF",50,56],["CM","MF",75,49],["LW","FW",20,23],["ST","FW",50,15],["RW","FW",80,23]],
@@ -396,8 +452,13 @@ function buildBest11(){
  formations[form].forEach(slot=>{const peers=s.records.filter(r=>r.position===slot[1]&&!used.has(r.name)).sort((a,b)=>bestScore(b)-bestScore(a)),r=peers[0]||null;if(r)used.add(r.name);chosen.push({slot,player:r,reason:r?reasonFor(r,s.records.filter(x=>x.position===slot[1])):"候補なし"})});
  db.best11[s.id]={formation:form,names:chosen.map(x=>x.player?.name||null),savedAt:new Date().toISOString()};saveDB();renderBest11(chosen);
 }
-$("buildBest11Btn").onclick=buildBest11;$("best11Season").onchange=renderSavedBest11;$("formationSelect").onchange=renderSavedBest11;
-function renderSavedBest11(){const s=getSeason($("best11Season").value),saved=s?db.best11[s.id]:null;if(!s||!saved){$("pitch").innerHTML="";$("best11List").innerHTML='<p class="empty">「自動選出」を押すと表示されます</p>';return}$("formationSelect").value=saved.formation;const chosen=formations[saved.formation].map((slot,i)=>{const r=s.records.find(x=>x.name===saved.names[i]);return{slot,player:r||null,reason:r?reasonFor(r,s.records.filter(x=>x.position===slot[1])):"候補なし"}});renderBest11(chosen)}
+$("buildBest11Btn").onclick=buildBest11;$("best11Season").onchange=renderSavedBest11;$("formationSelect").onchange=()=>{const s=getSeason($("best11Season").value);if(s&&s.records.length)buildBest11();else renderEmptyFormation()};
+function renderEmptyFormation(){
+ const slots=formations[$("formationSelect").value]||[];
+ $("pitch").innerHTML=slots.map(slot=>`<div class="slot" style="left:${slot[2]}%;top:${slot[3]}%"><div class="player-card"><small>${slot[0]}</small><b>－</b></div></div>`).join("");
+ $("best11List").innerHTML='<p class="empty">成績を入力後、自動選出できます</p>';
+}
+function renderSavedBest11(){const s=getSeason($("best11Season").value),saved=s?db.best11[s.id]:null;if(!s||!saved){renderEmptyFormation();return}$("formationSelect").value=saved.formation;const chosen=formations[saved.formation].map((slot,i)=>{const r=s.records.find(x=>x.name===saved.names[i]);return{slot,player:r||null,reason:r?reasonFor(r,s.records.filter(x=>x.position===slot[1])):"候補なし"}});renderBest11(chosen)}
 function renderBest11(chosen){$("pitch").innerHTML=chosen.map(x=>`<div class="slot" style="left:${x.slot[2]}%;top:${x.slot[3]}%"><div class="player-card"><small>${x.slot[0]}</small><b>${x.player?esc(displayName(x.player)):"－"}</b><div class="reason">${esc(x.reason)}</div></div></div>`).join("");$("best11List").innerHTML=chosen.map(x=>`<div class="banner ok" style="margin:7px 0"><b>${x.slot[0]}：${x.player?esc(displayName(x.player)):"候補なし"}</b><br><span class="note">${esc(x.reason)}</span></div>`).join("")}
 
 function backupSummary(data){const unique=new Set(data.seasons.flatMap(s=>s.records.map(r=>r.name)));return{seasons:data.seasons.length,players:unique.size,updated:data.seasons.map(s=>s.updatedAt).filter(Boolean).sort().slice(-1)[0]||null}}
@@ -411,7 +472,7 @@ function renderSelects(){
  const opts=db.seasons.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")||'<option value="">シーズンなし</option>';
  ["copySource","workSeason","rankingSeason","best11Season"].forEach(id=>{const old=$(id).value;$(id).innerHTML=opts;if(db.seasons.some(s=>s.id===old))$(id).value=old});
  const metricOpts=Object.entries(metrics).map(([k,v])=>`<option value="${k}">${v.icon} ${v.label}${v.eff?"（10試合以上）":""}</option>`).join("");
- $("rankingMetric").innerHTML=metricOpts;$("sortSelect").innerHTML='<option value="name">名前</option>'+metricOpts;$("sortSelect").value=sortState.key;
+ $("rankingMetric").innerHTML=metricOpts;$("sortSelect").innerHTML='<option value="roster">登録順</option><option value="position">ポジション順</option><option value="name">名前順</option>'+metricOpts;$("sortSelect").value=sortState.key;
 }
 function renderSeasonCards(){
  $("seasonCards").innerHTML=db.seasons.length?db.seasons.slice().reverse().map(s=>{const done=s.records.length,total=s.roster.length,pct=total?Math.round(done/total*100):0;return `<div class="season-card"><h3>${esc(s.name)} <span class="pill">${s.locked?"🔒 確定":"編集中"}</span></h3><div class="progress"><span style="width:${pct}%"></span></div><div class="meta"><span>${done}/${total}人</span><span>${pct}%</span></div><div class="actions"><button class="btn secondary" onclick="openSeason('${s.id}','${done<total?"entry":"view"}')">${done<total?"入力・再開":"成績を見る"}</button><button class="btn ghost" onclick="toggleSeasonLock('${s.id}')">${s.locked?"編集を再開":"シーズン確定"}</button><button class="btn danger" onclick="deleteSeason('${s.id}')">削除</button></div></div>`}).join(""):'<p class="empty">まだシーズンがありません</p>';
