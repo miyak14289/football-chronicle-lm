@@ -105,7 +105,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 </style>
 </head>
 <body>
-<header><h1>⚽ Football Chronicle</h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
+<header><h1>⚽ Football Chronicle <small style="font-size:.38em;color:var(--green2);white-space:nowrap">Ver.2.1.1</small></h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
 <main>
 <nav class="tabs">
 <button class="tab active" data-panel="seasonPanel">シーズン</button>
@@ -212,7 +212,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <div class="card"><h2>バックアップ</h2><div id="backupStatus" class="banner warn"></div>
 <div class="actions"><button class="btn primary" id="exportBackupBtn">全データを保存</button><label class="filebtn secondary">バックアップから復元<input id="importBackupInput" type="file" accept=".json,application/json" hidden></label></div>
 <p class="note">保存ファイルには、その時点までの全シーズン・全選手・全成績・ベストイレブン保存結果が入ります。</p></div>
-<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.1.0</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
+<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.1.1</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
 </section>
 </main>
 
@@ -251,9 +251,9 @@ const metrics={
  apg:{icon:"🪄",label:"アシスト／試合",eff:true},
  ipg:{icon:"💥",label:"得点関与／試合",eff:true}
 };
-function defaultDB(){return{version:"2.1.0",seasons:[],best11:{},lastBackup:null}}
+function defaultDB(){return{version:"2.1.1",seasons:[],best11:{},lastBackup:null}}
 function loadDB(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return x&&Array.isArray(x.seasons)?x:defaultDB()}catch{return defaultDB()}}
-function saveDB(){db.version="2.1.0";localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll()}
+function saveDB(){db.version="2.1.1";localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll()}
 function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"_"+Math.random()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function getSeason(id){return db.seasons.find(s=>s.id===id)}
