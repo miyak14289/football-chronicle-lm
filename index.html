@@ -117,7 +117,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 </style>
 </head>
 <body>
-<header><h1>⚽ Football Chronicle <small style="font-size:.38em;color:var(--green2);white-space:nowrap">Ver.2.2.0</small></h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
+<header><h1>⚽ Football Chronicle <small style="font-size:.38em;color:var(--green2);white-space:nowrap">Ver.2.2.1</small></h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
 <main>
 <nav class="tabs">
 <button class="tab active" data-panel="seasonPanel">シーズン</button>
@@ -224,7 +224,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <div class="card"><h2>バックアップ</h2><div id="storageWarning" class="safety-box"><b>重要：</b>データはSafari内に保存されています。Safariの履歴・Webサイトデータを削除すると消える場合があります。定期的にJSONバックアップを保存してください。</div><div id="backupStatus" class="banner warn" style="margin-top:12px"></div>
 <div class="actions"><button class="btn primary" id="exportBackupBtn">全データを保存</button><label class="filebtn secondary">バックアップから復元<input id="importBackupInput" type="file" accept=".json,application/json" hidden></label></div>
 <p class="note">保存ファイルには、その時点までの全シーズン・全選手・全成績・ベストイレブン保存結果が入ります。</p></div>
-<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.2.0</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
+<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.2.1</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
 </section>
 </main>
 
@@ -313,15 +313,7 @@ function titlesFor(se,r){
 function switchPanel(id){
  document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id===id));
  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.panel===id));
- window.scrollTo({top:0,behavior:"smooth"});
-$("cardFreeMemo").oninput=()=>$("memoCount").textContent=`${$("cardFreeMemo").value.length} / 200`;
-function generateCardReview(){const record=currentCardRecord();if(!record)return;const data=pullCardInputs(record);activeCard.previousReview=$("cardReviewInput").value;const variant=Math.floor(Math.random()*3);$("cardCatchcopyInput").value=makeCatchcopy(record,data,variant);$("cardReviewInput").value=makeReview(record,data,variant);$("cardCatchcopy").textContent=$("cardCatchcopyInput").value;$("cardReviewText").textContent=$("cardReviewInput").value}
-$("generateReviewBtn").onclick=generateCardReview;$("regenerateReviewBtn").onclick=generateCardReview;$("undoReviewBtn").onclick=()=>{$("cardReviewInput").value=activeCard.previousReview||""};
-$("savePlayerCardBtn").onclick=()=>{const record=currentCardRecord();if(!record)return;const data=pullCardInputs(record);data.catchcopy=$("cardCatchcopyInput").value.trim();data.review=$("cardReviewInput").value.trim();saveDB();renderPlayerCard();alert("選手カードを保存しました。")};
-$("closePlayerCardBtn").onclick=()=>$("playerCardModal").classList.remove("open");$("playerCardModal").onclick=e=>{if(e.target===$("playerCardModal"))$("playerCardModal").classList.remove("open")};
-$("ackStorageIntroBtn").onclick=()=>{localStorage.setItem("footballChronicleStorageIntroSeen","1");$("storageIntroModal").classList.remove("open")};if(!localStorage.getItem("footballChronicleStorageIntroSeen"))$("storageIntroModal").classList.add("open");
-
-renderAll();
+ window.scrollTo({top:0,behavior:"smooth"});renderAll();
 }
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>switchPanel(b.dataset.panel));
 
@@ -521,6 +513,35 @@ function renderSeasonCards(){
 }
 function renderBackupStatus(){const s=backupSummary(db),last=db.lastBackup?new Date(db.lastBackup):null,days=last?Math.floor((Date.now()-last)/86400000):null;$("backupStatus").innerHTML=last?`最後のバックアップ：<b>${last.toLocaleString("ja-JP")}</b>（${days}日前）<br>現在：${s.seasons}シーズン・${s.players}選手`:`まだバックアップされていません。<br>現在：${s.seasons}シーズン・${s.players}選手`}
 function renderAll(){renderSelects();renderSeasonCards();renderWorkStatus();renderPlayers();renderRanking();renderSavedBest11();renderBackupStatus();if(!$("seasonViewArea").classList.contains("hidden"))renderSeasonView()}
+
+$("cardFreeMemo").oninput=()=>$("memoCount").textContent=`${$("cardFreeMemo").value.length} / 200`;
+function generateCardReview(){
+ const record=currentCardRecord();
+ if(!record){alert("選手データを取得できませんでした。カードを閉じて開き直してください。");return;}
+ const data=pullCardInputs(record);
+ activeCard.previousReview=$("cardReviewInput").value;
+ const variant=Math.floor(Math.random()*3);
+ $("cardCatchcopyInput").value=makeCatchcopy(record,data,variant);
+ $("cardReviewInput").value=makeReview(record,data,variant);
+ $("cardCatchcopy").textContent=$("cardCatchcopyInput").value;
+ $("cardReviewText").textContent=$("cardReviewInput").value;
+}
+$("generateReviewBtn").onclick=generateCardReview;
+$("regenerateReviewBtn").onclick=generateCardReview;
+$("undoReviewBtn").onclick=()=>{$("cardReviewInput").value=activeCard.previousReview||""};
+$("savePlayerCardBtn").onclick=()=>{
+ const record=currentCardRecord();
+ if(!record){alert("選手データを取得できませんでした。");return;}
+ const data=pullCardInputs(record);
+ data.catchcopy=$("cardCatchcopyInput").value.trim();
+ data.review=$("cardReviewInput").value.trim();
+ saveDB();renderPlayerCard();alert("選手カードを保存しました。");
+};
+$("closePlayerCardBtn").onclick=()=>$("playerCardModal").classList.remove("open");
+$("playerCardModal").onclick=e=>{if(e.target===$("playerCardModal"))$("playerCardModal").classList.remove("open")};
+$("ackStorageIntroBtn").onclick=()=>{localStorage.setItem("footballChronicleStorageIntroSeen","1");$("storageIntroModal").classList.remove("open")};
+if(!localStorage.getItem("footballChronicleStorageIntroSeen"))$("storageIntroModal").classList.add("open");
+
 renderAll();
 </script>
 </body>
