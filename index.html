@@ -123,10 +123,18 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 .card-memo{background:#111714;border:1px solid var(--line);border-radius:13px;padding:12px;line-height:1.7;white-space:pre-wrap}
 .edit-area.hidden{display:none}
 
+
+.analysis-box{margin-top:16px;background:#101613;border:1px solid var(--line);border-radius:14px;padding:13px}
+.analysis-box h4{margin:0 0 9px;font-size:13px;color:var(--muted)}
+.analysis-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.analysis-item{background:#151c18;border:1px solid #2f3d36;border-radius:11px;padding:9px}
+.analysis-item small{display:block;color:var(--muted)}
+.analysis-item b{display:block;margin-top:3px}
+@media(max-width:760px){.analysis-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><h1>⚽ Football Chronicle <small style="font-size:.38em;color:var(--green2);white-space:nowrap">Ver.2.2.2</small></h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
+<header><h1>⚽ Football Chronicle <small style="font-size:.38em;color:var(--green2);white-space:nowrap">Ver.2.2.3 Beta1</small></h1><p>シーズンを重ねる、自分だけのチーム年鑑</p></header>
 <main>
 <nav class="tabs">
 <button class="tab active" data-panel="seasonPanel">シーズン</button>
@@ -233,7 +241,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
 <div class="card"><h2>バックアップ</h2><div id="storageWarning" class="safety-box"><b>重要：</b>データはSafari内に保存されています。Safariの履歴・Webサイトデータを削除すると消える場合があります。定期的にJSONバックアップを保存してください。</div><div id="backupStatus" class="banner warn" style="margin-top:12px"></div>
 <div class="actions"><button class="btn primary" id="exportBackupBtn">全データを保存</button><label class="filebtn secondary">バックアップから復元<input id="importBackupInput" type="file" accept=".json,application/json" hidden></label></div>
 <p class="note">保存ファイルには、その時点までの全シーズン・全選手・全成績・ベストイレブン保存結果が入ります。</p></div>
-<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.2.2</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
+<div class="card"><h2>アプリ情報</h2><p><b>Football Chronicle Ver.2.2.3 Beta1</b></p><p class="note">正式版。GitHub PagesとiPhone Safariでの利用を想定しています。</p></div>
 </section>
 </main>
 
@@ -274,7 +282,9 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
         <div class="section-label">シーズンレビュー</div>
         <div id="cardReviewText" class="review-text">レビュー未作成</div>
 
-        <div id="cardReadDetails">
+        <div id="cardAnalysisBox" class="analysis-box">
+<h4>内部分析（Beta1）</h4><div id="cardAnalysisGrid" class="analysis-grid"></div></div>
+<div id="cardReadDetails">
           <div id="cardTagsBlock" class="card-meta-block hidden"><h4>評価タグ</h4><div id="cardTagsView" class="card-chip-list"></div></div>
           <div id="cardGoodBlock" class="card-meta-block hidden"><h4>良かったプレー</h4><div id="cardGoodView" class="card-chip-list"></div></div>
           <div id="cardImproveBlock" class="card-meta-block hidden"><h4>改善したいプレー</h4><div id="cardImproveView" class="card-chip-list"></div></div>
@@ -351,6 +361,77 @@ function setCardEditMode(editing){
   $("editPlayerCardBtn").classList.toggle("hidden",editing);
   $("cardReadDetails").classList.toggle("hidden",editing);
 }
+
+function ageStage(age){
+ age=Number(age);
+ if(!Number.isFinite(age))return "年齢不明";
+ if(age<=20)return "若手";
+ if(age<=24)return "成長期";
+ if(age<=29)return "全盛期";
+ if(age<=33)return "ベテラン";
+ return "経験枠";
+}
+function sortedRank(rows,record,key){
+ const v=Number(record[key]??0);
+ return 1+rows.filter(r=>Number(r[key]??0)>v).length;
+}
+function positionPeers(season,record){return season.records.filter(r=>r.position===record.position)}
+function expectationResult(record){
+ const age=Number(record.age),apps=Number(record.apps||0);
+ if(!Number.isFinite(age))return apps>=25?"期待以上":apps>=12?"順当":"期待以下";
+ if(age<=20)return apps>=20?"期待以上":apps>=8?"順当":"期待以下";
+ if(age<=24)return apps>=25?"期待以上":apps>=15?"順当":"期待以下";
+ if(age<=29)return apps>=28?"期待以上":apps>=18?"順当":"期待以下";
+ if(age<=33)return apps>=24?"期待以上":apps>=12?"順当":"期待以下";
+ return apps>=18?"期待以上":apps>=8?"順当":"期待以下";
+}
+function assignTeamTitles(season){
+ const rs=season.records||[],titles={};rs.forEach(r=>titles[r.name]=[]);
+ const gks=rs.filter(r=>r.position==="GK").sort((a,b)=>(b.cleanSheets-a.cleanSheets)||(b.apps-a.apps)||(b.rating-a.rating));
+ if(gks[0])titles[gks[0].name].push("守護神");
+ rs.filter(r=>r.position==="FW").sort((a,b)=>(b.goals-a.goals)||(b.assists-a.assists)||(b.rating-a.rating))
+   .slice(0,3).forEach(r=>{if((r.goals||0)>0||(r.apps||0)>=15)titles[r.name].push("エース")});
+ const pm=rs.filter(r=>r.position==="MF").sort((a,b)=>(b.assists-a.assists)||(b.rating-a.rating)||(b.apps-a.apps))[0];
+ if(pm)titles[pm.name].push("司令塔");
+ rs.filter(r=>r.position==="DF").sort((a,b)=>(b.rating-a.rating)||(b.cleanSheets-a.cleanSheets)||(b.apps-a.apps))
+   .slice(0,2).forEach(r=>titles[r.name].push("守備の要"));
+ const young=rs.filter(r=>Number(r.age)<=21).sort((a,b)=>(b.apps-a.apps)||(b.rating-a.rating)||((b.goals+b.assists)-(a.goals+a.assists)))[0];
+ if(young)titles[young.name].push("ブレイクスター");
+ const future=rs.filter(r=>Number(r.age)<=20).sort((a,b)=>(b.rating-a.rating)||(b.apps-a.apps))[0];
+ if(future)titles[future.name].push("将来の主役");
+ rs.filter(r=>r.reviewData?.tags?.includes("縁の下の力持ち")).sort((a,b)=>(b.apps-a.apps)||(b.rating-a.rating))
+   .slice(0,2).forEach(r=>titles[r.name].push("縁の下の力持ち"));
+ return titles;
+}
+function buildAnalysis(season,record){
+ const peers=positionPeers(season,record),titles=assignTeamTitles(season);
+ return{
+  ageStage:ageStage(record.age),
+  expectation:expectationResult(record),
+  teamRanks:{
+   apps:sortedRank(season.records,record,"apps"),goals:sortedRank(season.records,record,"goals"),
+   assists:sortedRank(season.records,record,"assists"),rating:sortedRank(season.records,record,"rating"),
+   cleanSheets:sortedRank(season.records,record,"cleanSheets")
+  },
+  positionRanks:{
+   apps:sortedRank(peers,record,"apps"),goals:sortedRank(peers,record,"goals"),
+   assists:sortedRank(peers,record,"assists"),rating:sortedRank(peers,record,"rating"),
+   cleanSheets:sortedRank(peers,record,"cleanSheets")
+  },
+  titles:titles[record.name]||[]
+ };
+}
+function renderAnalysis(season,record){
+ const a=buildAnalysis(season,record);
+ const posLabel=record.position==="GK"?"同Pos CS順位":record.position==="DF"?"同Pos 評点順位":record.position==="MF"?"同Pos A順位":"同Pos 得点順位";
+ const posValue=record.position==="GK"?a.positionRanks.cleanSheets:record.position==="DF"?a.positionRanks.rating:record.position==="MF"?a.positionRanks.assists:a.positionRanks.goals;
+ $("cardAnalysisGrid").innerHTML=[
+  ["年齢区分",a.ageStage],["期待値判定",a.expectation],["チーム内出場順位",`${a.teamRanks.apps}位`],
+  [posLabel,`${posValue}位`],["肩書き",a.titles.length?a.titles.join("・"):"なし"]
+ ].map(([k,v])=>`<div class="analysis-item"><small>${k}</small><b>${v}</b></div>`).join("");
+ return a;
+}
+
 function renderPlayerCard(){
   const season=getSeason(activeCard.seasonId),record=currentCardRecord();
   if(!season||!record)return;
@@ -366,6 +447,7 @@ function renderPlayerCard(){
     ["平均評点",Number(record.rating||0).toFixed(2)]
   ].map(([label,value])=>`<div class="review-stat"><small>${label}</small><b>${value}</b></div>`).join("");
   $("cardReviewText").textContent=data.review||"レビュー未作成";
+  renderAnalysis(season,record);
   $("cardRankSelect").value=data.rank||"B";
   $("tagChoices").innerHTML=choiceHTML("tag",REVIEW_TAGS,data.tags||[]);
   $("goodChoices").innerHTML=choiceHTML("good",PLAY_TAGS,data.good||[]);
@@ -412,76 +494,36 @@ function positionRole(record){
          record.position==="FW"?"攻撃陣の切り札":"チームの重要戦力";
 }
 function makeCatchcopy(record,data,variant){
-  const season=getSeason(activeCard.seasonId);
-  const age=Number(record.age),appsRank=season?teamRank(season,record,"apps"):99;
-  const goalsRank=season?teamRank(season,record,"goals"):99;
-  const csRank=season?teamRank(season,record,"cleanSheets"):99;
-  const good=data.good||[],tags=data.tags||[];
-  const candidates=[];
-  if(record.position==="GK"){
-    if(csRank===1&&record.cleanSheets>0)candidates.push("ゴールを閉ざした絶対的守護神。");
-    if(good.includes("セーブ"))candidates.push("その両手が、幾度も勝利を引き寄せた。");
-    if(good.includes("コーチング"))candidates.push("最後尾からチームを動かした司令塔。");
-  }
-  if(record.position==="DF"){
-    if(good.includes("対人守備"))candidates.push("一対一を制し続けた防衛者。");
-    if(good.includes("空中戦"))candidates.push("空を支配した守備の巨人。");
-    candidates.push("最終ラインにそびえた揺るぎない壁。");
-  }
-  if(record.position==="MF"){
-    if(good.includes("パス")||good.includes("ビルドアップ"))candidates.push("ゲームを描いた中盤の設計者。");
-    if(good.includes("運動量"))candidates.push("走り続け、チームの鼓動となった。");
-  }
-  if(record.position==="FW"){
-    if(goalsRank===1&&record.goals>0)candidates.push("ゴールで答え続けた絶対的エース。");
-    if(good.includes("ドリブル"))candidates.push("突破一つで景色を変えたアタッカー。");
-    if(good.includes("決定力")||good.includes("シュート"))candidates.push("勝負を決める男。");
-  }
-  if(Number.isFinite(age)&&age<=20)candidates.push("未来を照らした若き新星。");
-  if(Number.isFinite(age)&&age>=30)candidates.push("経験でチームを導いた熟練の主役。");
-  if(appsRank===1)candidates.push("最も多くピッチに立った、信頼の象徴。");
-  if(tags.includes("ブレイクした"))candidates.push("その名を刻んだ飛躍の一年。");
-  if(tags.includes("縁の下の力持ち"))candidates.push("勝利を支えた影の主役。");
-  if(tags.includes("チームの中心"))candidates.push("すべてはこの男を中心に回った。");
-  candidates.push("数字と記憶に残る一年。");
-  return candidates[variant%candidates.length];
+ const season=getSeason(activeCard.seasonId),a=buildAnalysis(season,record),c=[];
+ if(a.titles.includes("守護神"))c.push("最後尾に君臨した、ただ一人の守護神。");
+ if(a.titles.includes("エース"))c.push("ゴールで違いを生んだ、攻撃陣のエース。");
+ if(a.titles.includes("司令塔"))c.push("中盤を動かした、唯一無二の司令塔。");
+ if(a.titles.includes("守備の要"))c.push("最終ラインを支えた、守備の要。");
+ if(a.titles.includes("ブレイクスター"))c.push("一気に名を上げた、今季のブレイクスター。");
+ if(a.titles.includes("将来の主役"))c.push("未来を託したくなる、次代の主役。");
+ if(a.titles.includes("縁の下の力持ち"))c.push("勝利を支えた、縁の下の力持ち。");
+ if(record.position==="GK"&&record.cleanSheets>0)c.push(`${record.cleanSheets}度の無失点を刻んだ最後の砦。`);
+ if(record.position==="FW"&&a.positionRanks.goals===1)c.push("同ポジションを制した、最前線の決定者。");
+ if(Number(record.age)<=20&&a.expectation==="期待以上")c.push("若さを超えた存在感。未来はもう始まっている。");
+ if(Number(record.age)>=30&&a.expectation==="期待以上")c.push("経験と実績で証明した、衰え知らずの主役。");
+ if(!c.length)c.push("数字だけでは語れない、確かな一年。");
+ return c[variant%c.length];
 }
 function makeReview(record,data,variant){
-  const season=getSeason(activeCard.seasonId);
-  const ageText=agePhrase(record),role=positionRole(record);
-  const appsRank=season?teamRankText(season,record,"apps","出場数"):"";
-  const goalsRank=season&&record.position==="FW"?teamRankText(season,record,"goals","得点数"):"";
-  const assistsRank=season&&["MF","FW"].includes(record.position)?teamRankText(season,record,"assists","アシスト数"):"";
-  const csRank=season&&["GK","DF"].includes(record.position)?teamRankText(season,record,"cleanSheets","クリーンシート数"):"";
-
-  let opening="";
-  if(record.position==="GK"){
-    opening=`${ageText}${role}として${record.apps}試合に出場し、${record.cleanSheets}度のクリーンシートを記録。`;
-  }else if(record.position==="DF"){
-    opening=`${ageText}${role}として${record.apps}試合に出場。${record.cleanSheets}度のクリーンシートに貢献し、${record.goals}得点${record.assists}アシストも残した。`;
-  }else if(record.position==="MF"){
-    opening=`${ageText}${role}として${record.apps}試合に出場し、${record.goals}得点${record.assists}アシストを記録。`;
-  }else{
-    opening=`${ageText}${role}として${record.apps}試合に出場し、${record.goals}得点${record.assists}アシストを叩き出した。`;
-  }
-
-  const ranks=[appsRank,goalsRank,assistsRank,csRank].filter(Boolean);
-  const rankSentence=ranks.length?`${ranks.join("、")}という事実が、チーム内での存在感を物語っている。`:"";
-  const ratingSentence=`平均評点${Number(record.rating).toFixed(2)}が示す通り、シーズンを通して確かなパフォーマンスを披露した。`;
-  const tags=(data.tags||[]).map(tagSentence).join("。");
-  const good=(data.good||[]).length?`${data.good.join("、")}を武器に、${role}としての価値を存分に示した。`:"";
-  const memo=data.memo?`特に${data.memo.replace(/[。]+$/,"").trim()}。`:"";
-  const improve=(data.improve||[]).length?`一方で、${data.improve.join("と")}にはさらなる伸びしろも残している。`:"";
-  const close=data.rank==="S"?"まさにシーズンを象徴する圧巻の活躍だった。":
-              data.rank==="A"?"チームに欠かせない主役級の一年だった。":
-              data.rank==="B"?"確かな存在感を残し、来季への期待をさらに高める一年となった。":
-              "苦しさの中にも次の反撃へつながる材料を残した。";
-  const variants=[
-    [opening,rankSentence,ratingSentence,tags&&tags+"。",good,memo,improve,close],
-    [opening,ratingSentence,good,rankSentence,tags&&tags+"。",memo,improve,close],
-    [opening,tags&&tags+"。",rankSentence,good,ratingSentence,memo,improve,close]
-  ];
-  return variants[variant%variants.length].filter(Boolean).join("");
+ const season=getSeason(activeCard.seasonId),a=buildAnalysis(season,record);
+ const ageText=a.ageStage==="若手"?"若手ながら":a.ageStage==="成長期"?"成長期の選手として":a.ageStage==="全盛期"?"全盛期を迎える中で":a.ageStage==="ベテラン"?"ベテランとして":"豊富な経験を生かし";
+ const titleText=a.titles.length?`${a.titles.join("、")}の肩書きにふさわしい存在感を示した。`:"";
+ const exp=a.expectation==="期待以上"?"年齢と立場を踏まえても期待以上の働きだった。":a.expectation==="順当"?"求められた役割を着実に果たした。":"年齢と立場を考えると、やや物足りなさも残った。";
+ const pos=record.position==="GK"?`同ポジション内のクリーンシート数は${a.positionRanks.cleanSheets}位。`:record.position==="DF"?`同ポジション内の平均評点は${a.positionRanks.rating}位。`:record.position==="MF"?`同ポジション内のアシスト数は${a.positionRanks.assists}位。`:`同ポジション内の得点数は${a.positionRanks.goals}位。`;
+ const stats=record.position==="GK"?`${record.apps}試合に出場し、${record.cleanSheets}度のクリーンシートを記録。`:`${record.apps}試合に出場し、${record.goals}得点${record.assists}アシストを記録。`;
+ const team=`チーム内の出場数は${a.teamRanks.apps}位。`;
+ const tag=(data.tags||[]).length?(data.tags||[]).map(tagSentence).join("。")+"。":"";
+ const good=(data.good||[]).length?`${data.good.join("、")}を武器に、自身の役割を印象づけた。`:"";
+ const improve=(data.improve||[]).length?`一方で、${data.improve.join("と")}には改善の余地も残している。`:"";
+ const memo=data.memo?`特に${data.memo.replace(/[。]+$/,"").trim()}。`:"";
+ const close=data.rank==="S"?"文句なしに、シーズンを代表する一人だった。":data.rank==="A"?"主役級の価値を示した一年だった。":data.rank==="B"?"確かな足跡を残したシーズンだった。":"悔しさを次へつなげたい一年となった。";
+ const variants=[[ageText,stats,team,pos,titleText,exp,tag,good,memo,improve,close],[stats,ageText,exp,titleText,team,pos,good,tag,memo,improve,close],[titleText,ageText,stats,pos,team,exp,tag,good,memo,improve,close]];
+ return variants[variant%variants.length].filter(Boolean).join("");
 }
 function pullCardInputs(record){const data=reviewDataFor(record);data.rank=$("cardRankSelect").value;data.tags=selectedChoices("tag");data.good=selectedChoices("good");data.improve=selectedChoices("improve");data.memo=$("cardFreeMemo").value.trim();return data}
 
